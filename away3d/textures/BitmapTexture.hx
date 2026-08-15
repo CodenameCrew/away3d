@@ -8,6 +8,7 @@ import openfl.display3D.textures.Texture;
 import openfl.display3D.textures.TextureBase;
 import openfl.errors.Error;
 import openfl.utils.ByteArray;
+import openfl.display3D.Context3D;
 
 class BitmapTexture extends Texture2DBase {
 	private static var _mipMaps:Array<Array<BitmapData>> = [];
@@ -21,7 +22,7 @@ class BitmapTexture extends Texture2DBase {
 		super();
 
 		this.bitmapData = bitmapData;
-		_generateMipmaps = _hasMipmaps = generateMipmaps;
+		_generateMipmaps = _hasMipmaps = #if flash generateMipmaps #else false #end;
 	}
 
 	public var bitmapData(get, set):BitmapData;
@@ -50,8 +51,14 @@ class BitmapTexture extends Texture2DBase {
 	override private function uploadContent(texture:TextureBase):Void {
 		if (_generateMipmaps)
 			MipmapGenerator.generateMipMaps(_bitmapData, texture, _mipMapHolder, true);
-		else
+		else if (_bitmapData.readable)
 			cast(texture, Texture).uploadFromBitmapData(_bitmapData, 0);
+	}
+
+	override private function createTexture(context:Context3D):TextureBase {
+	    if (_bitmapData.readable)
+	        return super.createTexture(context);
+		return @:privateAccess _bitmapData.__texture;
 	}
 
 	private function getMipMapHolder():Void {
